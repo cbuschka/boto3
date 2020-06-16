@@ -21,7 +21,6 @@ from botocore.exceptions import DataNotFoundError, UnknownServiceError
 import boto3
 import boto3.utils
 from boto3.exceptions import ResourceNotExistsError, UnknownAPIVersionError
-
 from .resources.factory import ResourceFactory
 
 
@@ -45,6 +44,7 @@ class Session(object):
     :param profile_name: The name of a profile to use. If not given, then
                          the default profile is used.
     """
+
     def __init__(self, aws_access_key_id=None, aws_secret_access_key=None,
                  aws_session_token=None, region_name=None,
                  botocore_session=None, profile_name=None):
@@ -342,7 +342,7 @@ class Session(object):
         except UnknownServiceError:
             available = self.get_available_resources()
             has_low_level_client = (
-                service_name in self.get_available_services())
+                    service_name in self.get_available_services())
             raise ResourceNotExistsError(service_name, available,
                                          has_low_level_client)
         except DataNotFoundError:
@@ -451,3 +451,10 @@ class Session(object):
             boto3.utils.lazy_call(
                 'boto3.ec2.deletetags.inject_delete_tags',
                 event_emitter=self.events))
+
+        # SQS customizations
+        self._session.register(
+            'creating-resource-class.sqs.Queue',
+            boto3.utils.lazy_call(
+                'boto3.sqs.queue.register_queue_methods'),
+            unique_id='high-level-sqs-queue')
